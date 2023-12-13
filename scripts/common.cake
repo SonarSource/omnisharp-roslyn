@@ -279,14 +279,14 @@ public class BuildEnvironment
             }
             catch
             {
-                context.Warning("GitVersion failed. Setting default version 0.0.1-local");
+                context.Warning("GitVersion failed. Setting default SonarSource fork version");
 
                 return new GitVersion
                 {
-                    NuGetVersion = "1.39.6",
-                    AssemblySemVer = "1.39.6.0",
-                    InformationalVersion = "1.39.6",
-                    SemVer = "1.39.6"
+                    NuGetVersion = "1.39.10",
+                    AssemblySemVer = "1.39.10.0",
+                    InformationalVersion = "1.39.10",
+                    SemVer = "1.39.10"
                 };
             }
         }
