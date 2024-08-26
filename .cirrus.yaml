@@ -1,6 +1,7 @@
 env:
   # Allows to run builds for the 50 last commits in a branch:
   CIRRUS_CLONE_DEPTH: 50
+  CIRRUS_SHELL: bash
   SLACK_TOKEN: VAULT[development/kv/data/slack data.token]
   SLACK_CHANNEL: squad-ide-intellij-family-bots
 
@@ -34,7 +35,6 @@ build_linux_task:
     cpu: 4
     memory: 2G
   env:
-    CIRRUS_SHELL: bash
     PATH: ${PATH}:${HOME}/.dotnet/tools
   build_linux_script: ./build.sh --target Quick --configuration Release
   mono_net6_artifacts:
@@ -45,9 +45,8 @@ build_windows_task:
   <<: *ONLY_SONARSOURCE_QA
   ec2_instance:
     <<: *INSTANCE_DEFINITION
-  env:
-    CIRRUS_SHELL: powershell
-  build_windows_script: build.ps1 Quick --configuration Release
+  build_windows_script:
+    - ps: ${CIRRUS_WORKING_DIR}/build.ps1 Quick --configuration Release
   net472_artifacts:
     path: ${CIRRUS_WORKING_DIR}/artifacts/package/omnisharp-net472.{zip,tar.gz}
   <<: *NOTIFY_SLACK_ON_FAILURE
