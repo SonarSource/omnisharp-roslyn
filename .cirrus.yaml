@@ -45,8 +45,7 @@ build_windows_task:
   <<: *ONLY_SONARSOURCE_QA
   ec2_instance:
     <<: *INSTANCE_DEFINITION
-  build_windows_script:
-    - ps: ${CIRRUS_WORKING_DIR}/build.ps1 Quick --configuration Release
+  build_windows_script: powershell -File build.ps1 Quick --configuration Release
   net472_artifacts:
     path: ${CIRRUS_WORKING_DIR}/artifacts/package/omnisharp-net472.{zip,tar.gz}
   <<: *NOTIFY_SLACK_ON_FAILURE
