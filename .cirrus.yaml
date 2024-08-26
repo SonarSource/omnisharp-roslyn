@@ -37,8 +37,10 @@ build_linux_task:
   env:
     PATH: ${PATH}:${HOME}/.dotnet/tools
   build_linux_script: ./build.sh --target Quick --configuration Release
-  mono_net6_artifacts:
-    path: ${CIRRUS_WORKING_DIR}/artifacts/package/omnisharp-{mono,net6}.{zip,tar.gz}
+  mono_artifacts:
+    path: artifacts/package/omnisharp-mono.*
+  net6_artifacts:
+    path: artifacts/package/omnisharp-net6.0.*
   <<: *NOTIFY_SLACK_ON_FAILURE
 
 build_windows_task:
@@ -47,5 +49,5 @@ build_windows_task:
     <<: *INSTANCE_DEFINITION
   build_windows_script: powershell -File build.ps1 Quick --configuration Release
   net472_artifacts:
-    path: ${CIRRUS_WORKING_DIR}/artifacts/package/omnisharp-net472.{zip,tar.gz}
+    path: artifacts/package/omnisharp-net472.*
   <<: *NOTIFY_SLACK_ON_FAILURE
