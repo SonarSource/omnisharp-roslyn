@@ -36,7 +36,7 @@ build_linux_task:
     memory: 4G
   env:
     PATH: ${PATH}:${HOME}/.dotnet/tools
-  build_linux_script: ./build.sh --target Quick --configuration Release
+  build_linux_script: ./build.sh --target Quick --configuration Release --archive
   mono_artifacts:
     path: artifacts/package/omnisharp-mono.*
   net6_artifacts:
@@ -47,7 +47,7 @@ build_windows_task:
   <<: *ONLY_SONARSOURCE_QA
   ec2_instance:
     <<: *INSTANCE_DEFINITION
-  build_windows_script: powershell -File build.ps1 Quick --configuration Release
+  build_windows_script: powershell -File build.ps1 -target Quick -configuration Release -archive
   net472_artifacts:
     path: artifacts/package/omnisharp-net472.*
   <<: *NOTIFY_SLACK_ON_FAILURE
