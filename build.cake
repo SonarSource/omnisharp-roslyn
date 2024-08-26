@@ -562,8 +562,6 @@ Task("PublishWindowsBuilds")
     foreach (var project in buildPlan.HostProjects)
     {
         string outputFolder = PublishBuild(project, env, buildPlan, configuration, "net472");
-
-        CreateRunScript(project, outputFolder, env.Folders.ArtifactsScripts);
     }
 });
 
