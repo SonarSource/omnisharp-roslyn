@@ -33,7 +33,7 @@ build_linux_task:
   eks_container:
     <<: *CONTAINER_DEFINITION
     cpu: 4
-    memory: 2G
+    memory: 4G
   env:
     PATH: ${PATH}:${HOME}/.dotnet/tools
   build_linux_script: ./build.sh --target Quick --configuration Release
