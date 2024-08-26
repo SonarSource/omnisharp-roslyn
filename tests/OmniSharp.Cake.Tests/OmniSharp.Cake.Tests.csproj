@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net7.0;net472</TargetFrameworks>
+    <TargetFrameworks>net8.0;net472</TargetFrameworks>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
   </PropertyGroup>
@@ -11,10 +11,6 @@
     <EmbeddedResource Include="TestAssets\single.cake.txt" />
     <EmbeddedResource Include="TestAssets\multi.cake.g.txt" />
     <EmbeddedResource Include="TestAssets\multi.cake.txt" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="..\app.config" Link="app.config" />
   </ItemGroup>
 
   <ItemGroup>

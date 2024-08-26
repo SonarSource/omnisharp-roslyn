@@ -1,14 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net7.0;net472</TargetFrameworks>
+    <TargetFrameworks>net8.0;net472</TargetFrameworks>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
   </PropertyGroup>
-
-  <ItemGroup>
-    <None Include="..\app.config" Link="app.config" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\OmniSharp.LanguageServerProtocol\OmniSharp.LanguageServerProtocol.csproj" />
