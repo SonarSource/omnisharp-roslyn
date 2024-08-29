@@ -1,6 +1,21 @@
 # Changelog
 All changes to the project will be documented in this file.
 
+## [1.39.12] - 2024-07-26
+* Update .NET SDKs (PR: [#2621](https://github.com/OmniSharp/omnisharp-roslyn/pull/2621))
+* Update Roslyn to 4.12.0-1.24358.3 (PR: [#2619](https://github.com/OmniSharp/omnisharp-roslyn/pull/2619))
+* Fix code fix construction (PR: [#2620](https://github.com/OmniSharp/omnisharp-roslyn/pull/2620))
+* Remove NuGet.Packaging.Core, as it's an assembly that only contains forwarders  (PR: [#2610](https://github.com/OmniSharp/omnisharp-roslyn/pull/2610))
+* Fix inlay hints lambdas parameter type null reference exception (PR: [#2604](https://github.com/OmniSharp/omnisharp-roslyn/pull/2604))
+* Update SDKs and Roslyn (PR: [#2603](https://github.com/OmniSharp/omnisharp-roslyn/pull/2603))
+* Pass project path when performing a restore (PR: [#2593](https://github.com/OmniSharp/omnisharp-roslyn/pull/2593))
+
+## [1.39.11] - 2023-12-19
+* Update changelog (PR: [#2591](https://github.com/OmniSharp/omnisharp-roslyn/pull/2591))
+* Update Readme text and fix broken link. ([#2581](https://github.com/OmniSharp/omnisharp-roslyn/issues/2581), PR: [#2582](https://github.com/OmniSharp/omnisharp-roslyn/pull/2582))
+* Update SDKs and dependencies ([#2586](https://github.com/OmniSharp/omnisharp-roslyn/issues/2586), PR: [#2588](https://github.com/OmniSharp/omnisharp-roslyn/pull/2588))
+* Updated to latest dotnet-script 1.5.0 (PR: [#2585](https://github.com/OmniSharp/omnisharp-roslyn/pull/2585))
+
 ## [1.39.10] - 2023-10-05
 * Add RazorComplier EA to support razor generators (PR: [#2572](https://github.com/OmniSharp/omnisharp-roslyn/pull/2572))
 

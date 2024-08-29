@@ -1,9 +1,10 @@
 
 name: 'Tests'
 env:
-  DotNetVersion: "8.0.100-rc.1.23463.5"
-  DotNetVersion2: "7.0.302"
-  DotNetVersion3: "6.0.203"
+  DotNetVersion: "9.0.100-preview.6.24328.19"
+  DotNetVersion2: "8.0.303"
+  DotNetVersion3: "7.0.410"
+  DotNetVersion4: "6.0.203" # This is the last version Mono supports. It is used for our Mono CI tests.
   NuGetVersion: "6.5.0"
   MonoVersion: "6.12.0"
   Artifacts: ${{ github.workspace }}/artifacts/
@@ -26,10 +27,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, windows-2022, macos-11]
+        os: [ubuntu-20.04, windows-2022, macos-12]
         testProjects:
-          - OmniSharp.MSBuild.Tests,OmniSharp.Roslyn.CSharp.Tests,OmniSharp.Cake.Tests,OmniSharp.Script.Tests,OmniSharp.Stdio.Tests,OmniSharp.Http.Tests,OmniSharp.Tests,OmniSharp.Lsp.Tests
-          - OmniSharp.DotNetTest.Tests
+          - OmniSharp.MSBuild.Tests,OmniSharp.Roslyn.CSharp.Tests,OmniSharp.DotNetTest.Tests,OmniSharp.Cake.Tests
+          - OmniSharp.Lsp.Tests,OmniSharp.Script.Tests,OmniSharp.Tests,OmniSharp.Stdio.Tests,OmniSharp.Http.Tests
     name: 'Test'
     steps:
       - name: Checkout
@@ -55,6 +56,7 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: |
+            ${{ env.DotNetVersion4 }}
             ${{ env.DotNetVersion3 }}
             ${{ env.DotNetVersion2 }}
             ${{ env.DotNetVersion }}
