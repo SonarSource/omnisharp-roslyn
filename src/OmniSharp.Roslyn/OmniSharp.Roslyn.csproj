@@ -5,6 +5,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <IsPackable>true</IsPackable>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,10 +17,12 @@
     <PackageReference Include="Microsoft.CodeAnalysis.Common" />
     <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" />
     <PackageReference Include="Microsoft.CodeAnalysis.ExternalAccess.OmniSharp" />
-    <!-- Not directly referenced but needed for Razor source generators -->
-    <PackageReference Include="Microsoft.CodeAnalysis.ExternalAccess.RazorCompiler" ReferenceOutputAssembly="false" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" />
     <PackageReference Include="System.ComponentModel.Composition" />
-    <PackageReference Include="System.Reflection.DispatchProxy" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Not directly referenced but needed for Route embedded language features -->
+    <PackageReference Include="Microsoft.CodeAnalysis.ExternalAccess.AspNetCore" ReferenceOutputAssembly="false" />
   </ItemGroup>
 </Project>
