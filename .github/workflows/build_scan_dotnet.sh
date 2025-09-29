@@ -28,9 +28,6 @@ echo "GITHUB_RUN_ID: $GITHUB_RUN_ID"
 echo "GITHUB_BRANCH: $GITHUB_BRANCH"
 echo "GITHUB_BASE_BRANCH: ${GITHUB_BASE_REF:-}"
 
-# Build (ideally should also run .NET unit tests but they are failing)
-powershell -File build.ps1 -target Build -configuration Release
-
 SONAR_PARAMS=(
   -v:"${VERSION}"
   -k:"SonarSource_omnisharp-roslyn"
