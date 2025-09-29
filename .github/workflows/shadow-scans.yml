@@ -47,6 +47,7 @@ jobs:
         SONAR_REGION: us
       run: |
         bash .github/workflows/build_scan_dotnet.sh
+
   iris-sync:
     runs-on: github-ubuntu-latest-s
     name: 🎁 Run IRIS sync
