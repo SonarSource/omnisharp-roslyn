@@ -50,8 +50,8 @@ jobs:
         bash .github/workflows/build_scan_dotnet.sh
     - name: 🎁 Build and analyze dotnet project on SQC US
       env:
+        SONAR_URL: ${{ fromJSON(steps.secrets.outputs.vault).SQC_US_URL }}
         SONAR_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).SQC_US_TOKEN }}
-        SONAR_REGION: us
       run: |
         bash .github/workflows/build_scan_dotnet.sh
   iris-sync:
