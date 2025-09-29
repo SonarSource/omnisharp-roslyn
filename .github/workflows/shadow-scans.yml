@@ -47,8 +47,12 @@ jobs:
         SONAR_REGION: us
       run: |
         bash .github/workflows/build_scan_dotnet.sh
-    - name: 🎁 Run IRIS sync
-      uses: SonarSource/unified-dogfooding-actions/run-iris@v1
+  iris-sync:
+    runs-on: github-ubuntu-latest-s
+    name: 🎁 Run IRIS sync
+    needs: build
+    steps:
+      - uses: SonarSource/unified-dogfooding-actions/run-iris@v1
       with:
         primary_project_key: "SonarSource_omnisharp-roslyn"
         primary_platform: "Next"
