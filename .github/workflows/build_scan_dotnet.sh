@@ -13,6 +13,7 @@ echo "Sonar project version is '${VERSION}'"
 # Determine if this is a pull request
 if [ "${GITHUB_EVENT_NAME}" == "pull_request" ]; then
     export PULL_REQUEST="${GITHUB_REF##refs/pull/}"
+    export PULL_REQUEST="${PULL_REQUEST%/merge}"
     export GITHUB_BRANCH="${GITHUB_HEAD_REF}"
     export GITHUB_BASE_BRANCH="${GITHUB_BASE_REF}"
 else
