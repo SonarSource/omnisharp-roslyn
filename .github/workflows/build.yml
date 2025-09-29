@@ -14,11 +14,6 @@ defaults:
     shell: pwsh
 on:
   pull_request:
-    branches:
-      - master
-      - feature/*
-    tags:
-      - "*"
   workflow_dispatch:
 jobs:
   build:
@@ -26,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, windows-2022, macos-13]
+        os: [github-ubuntu-latest-s, github-windows-latest-s]
     name: "Build"
     steps:
       - name: Checkout
