@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# This script expects 2 environment variables to be set:
-# * SONAR_TOKEN
-# * SONAR_HOST_URL
-
 set -euo pipefail
 
 # Read the version from the build script
