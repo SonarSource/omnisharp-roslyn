@@ -18,12 +18,18 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
+    permissions:
+      id-token: write
+      contents: write
     strategy:
       fail-fast: false
       matrix:
         os: [github-ubuntu-latest-s, github-windows-latest-s]
     name: "Build"
     steps:
+      - uses: jdx/mise-action@c37c93293d6b742fc901e1406b8f764f6fb19dac # v2.4.4
+        with:
+          version: 2025.7.12
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -52,9 +58,22 @@ jobs:
         run: |
           nuget install tools/packages.config -ExcludeVersion -OutputDirectory tools
 
-      - name: 🍰 Run Cake
+      - name: 🎁 Get Repox Credentials from Vault
+        id: secrets
+        uses: SonarSource/vault-action-wrapper@v3
+        with:
+          secrets: |
+            development/kv/data/next url | SQS_NEXT_URL;
+            development/kv/data/next token | SQS_NEXT_TOKEN;
+      
+      - name: 🎁 Install SonarScanner
         run: |
-          dotnet cake --configuration=Release --verbosity=Verbose --target=CI --publish-all --archive
+          dotnet tool install --global dotnet-sonarscanner
+
+      - name: 🍰 Build and analyze dotnet project on SQS Next
+        env:
+          SONAR_URL: ${{ fromJSON(steps.secrets.outputs.vault).SQS_NEXT_URL }}
+          SONAR_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).SQS_NEXT_TOKEN }}
 
       - name: ⬆ Publish Logs
         uses: actions/upload-artifact@v4

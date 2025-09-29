@@ -52,7 +52,7 @@ else
 fi
 
 # Build (ideally should also run .NET unit tests but they are failing)
-powershell -File build.ps1 -target Build -configuration Release
+dotnet cake --configuration=Release --verbosity=Verbose --target=Quick
 
 # Finish SonarQube scan
 dotnet sonarscanner end \
