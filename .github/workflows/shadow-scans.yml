@@ -41,6 +41,12 @@ jobs:
         SONAR_REGION: eu
       run: |
         bash .github/workflows/build_scan_dotnet.sh
+    - name: 🎁 Build and analyze dotnet project on SQC EU
+      env:
+        SONAR_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).SQC_EU_TOKEN }}
+        SONAR_REGION: eu
+      run: |
+        bash .github/workflows/build_scan_dotnet.sh
     - name: 🎁 Build and analyze dotnet project on SQC US
       env:
         SONAR_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).SQC_US_TOKEN }}
@@ -51,6 +57,9 @@ jobs:
     runs-on: github-ubuntu-latest-s
     name: Run IRIS sync
     needs: build
+    permissions:
+      id-token: write
+      contents: write
     steps:
     - uses: SonarSource/unified-dogfooding-actions/run-iris@v1
       with:
