@@ -1,4 +1,18 @@
 name: Shadow scans
+
+env:
+  DotNetVersion: "10.0.100-preview.6.25358.103"
+  DotNetVersion2: "9.0.303"
+  DotNetVersion3: "8.0.412"
+  DotNetVersion4: "6.0.428"
+  DotNetVersion5: "6.0.203" # This is the last version Mono supports. It is used for our Mono CI tests.
+  NuGetVersion: "6.5.0"
+  MonoVersion: "6.12.0"
+  Artifacts: ${{ github.workspace }}/artifacts/
+  Coverage: ${{ github.workspace }}/coverage/
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
+  CLR_OPENSSL_VERSION_OVERRIDE: 1.1
+
 on:
   schedule:
     # Run the workflow every day at 04:00 UTC
@@ -13,46 +27,67 @@ jobs:
       id-token: write
       contents: write
     steps:
-    - uses: jdx/mise-action@c37c93293d6b742fc901e1406b8f764f6fb19dac # v2.4.4
-      with:
-        version: 2025.7.12
-    - name: Checkout
-      uses: actions/checkout@v2
-      with:
-        clean: "false"
-        fetch-depth: "0"
-    - name: 🎁 Get Repox Credentials from Vault
-      id: secrets
-      uses: SonarSource/vault-action-wrapper@v3
-      with:
-        secrets: |
-          development/kv/data/next url | SQS_NEXT_URL;
-          development/kv/data/next token | SQS_NEXT_TOKEN;
-          development/kv/data/sonarcloud url | SQC_EU_URL;
-          development/kv/data/sonarcloud token | SQC_EU_TOKEN;
-          development/kv/data/sonarqube-us url | SQC_US_URL;
-          development/kv/data/sonarqube-us token | SQC_US_TOKEN;
-    - name: 🎁 Install SonarScanner
-      run: |
-        dotnet tool install --global dotnet-sonarscanner
-    - name: 🎁 Build and analyze dotnet project on SQS Next
-      env:
-        SONAR_URL: ${{ fromJSON(steps.secrets.outputs.vault).SQS_NEXT_URL }}
-        SONAR_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).SQS_NEXT_TOKEN }}
-      run: |
-        bash .github/workflows/build_scan_dotnet.sh
-    - name: 🎁 Build and analyze dotnet project on SQC EU
-      env:
-        SONAR_URL: ${{ fromJSON(steps.secrets.outputs.vault).SQC_EU_URL }}
-        SONAR_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).SQC_EU_TOKEN }}
-      run: |
-        bash .github/workflows/build_scan_dotnet.sh
-    - name: 🎁 Build and analyze dotnet project on SQC US
-      env:
-        SONAR_URL: ${{ fromJSON(steps.secrets.outputs.vault).SQC_US_URL }}
-        SONAR_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).SQC_US_TOKEN }}
-      run: |
-        bash .github/workflows/build_scan_dotnet.sh
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: "0"
+
+      - name: Setup NuGet.exe
+        uses: nuget/setup-nuget@v1
+        with:
+          nuget-version: ${{ env.NuGetVersion }}
+
+      - name: 🔨 Use .NET Core SDKs
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: |
+            ${{ env.DotNetVersion5 }}
+            ${{ env.DotNetVersion4 }}
+            ${{ env.DotNetVersion3 }}
+            ${{ env.DotNetVersion2 }}
+            ${{ env.DotNetVersion }}
+
+      - name: 🎁 dotnet tool restore
+        run: |
+          dotnet tool restore
+          dotnet tool install --global dotnet-sonarscanner
+
+      - name: 🎁 nuget install
+        run: |
+          nuget install tools/packages.config -ExcludeVersion -OutputDirectory tools
+
+      - name: 🎁 Get Repox Credentials from Vault
+        id: secrets
+        uses: SonarSource/vault-action-wrapper@v3
+        with:
+          secrets: |
+            development/kv/data/next url | SQS_NEXT_URL;
+            development/kv/data/next token | SQS_NEXT_TOKEN;
+            development/kv/data/sonarcloud url | SQC_EU_URL;
+            development/kv/data/sonarcloud token | SQC_EU_TOKEN;
+            development/kv/data/sonarqube-us url | SQC_US_URL;
+            development/kv/data/sonarqube-us token | SQC_US_TOKEN;
+
+      - name: 🎁 Build and analyze dotnet project on SQS Next
+        shell: bash
+        env:
+          SONAR_URL: ${{ fromJSON(steps.secrets.outputs.vault).SQS_NEXT_URL }}
+          SONAR_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).SQS_NEXT_TOKEN }}
+        run: .github/scripts/build_scan_dotnet.sh
+
+      - name: 🎁 Build and analyze dotnet project on SQC EU
+        shell: bash
+        env:
+          SONAR_URL: ${{ fromJSON(steps.secrets.outputs.vault).SQC_EU_URL }}
+          SONAR_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).SQC_EU_TOKEN }}
+        run: .github/scripts/build_scan_dotnet.sh
+
+      - name: 🎁 Build and analyze dotnet project on SQC US
+        shell: bash
+        env:
+          SONAR_URL: ${{ fromJSON(steps.secrets.outputs.vault).SQC_US_URL }}
+          SONAR_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).SQC_US_TOKEN }}
+        run: .github/scripts/build_scan_dotnet.sh
+
   iris-sync:
     runs-on: github-ubuntu-latest-s
     name: Run IRIS sync
@@ -61,11 +96,11 @@ jobs:
       id-token: write
       contents: write
     steps:
-    - uses: SonarSource/unified-dogfooding-actions/run-iris@v1
-      with:
-        primary_project_key: "SonarSource_omnisharp-roslyn"
-        primary_platform: "Next"
-        shadow1_project_key: "SonarSource_omnisharp-roslyn"
-        shadow1_platform: "SQC-EU"
-        shadow2_project_key: "SonarSource_omnisharp-roslyn"
-        shadow2_platform: "SQC-US"
+      - uses: SonarSource/unified-dogfooding-actions/run-iris@v1
+        with:
+          primary_project_key: "SonarSource_omnisharp-roslyn"
+          primary_platform: "Next"
+          shadow1_project_key: "SonarSource_omnisharp-roslyn"
+          shadow1_platform: "SQC-EU"
+          shadow2_project_key: "SonarSource_omnisharp-roslyn"
+          shadow2_platform: "SQC-US"

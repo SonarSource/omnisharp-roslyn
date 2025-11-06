@@ -32,6 +32,7 @@ SONAR_PARAMS=(
   -d:sonar.token="${SONAR_TOKEN}"
   -d:sonar.analysis.pipeline="$GITHUB_RUN_ID"
   -d:sonar.analysis.sha1="${GITHUB_SHA}"
+  -d:sonar.cs.vscoveragexml.reportsPaths="${Coverage}"
   -d:sonar.scanner.scanAll=false
 )
 
@@ -52,7 +53,7 @@ else
 fi
 
 # Build (ideally should also run .NET unit tests but they are failing)
-powershell -File build.ps1 -target Build -configuration Release
+dotnet cake --configuration=Release --verbosity=Verbose --target=CI
 
 # Finish SonarQube scan
 dotnet sonarscanner end \

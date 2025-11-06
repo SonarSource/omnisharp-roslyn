@@ -1,4 +1,16 @@
 name: Build (Fork)
+env:
+  DotNetVersion: "10.0.100-preview.6.25358.103"
+  DotNetVersion2: "9.0.303"
+  DotNetVersion3: "8.0.412"
+  DotNetVersion4: "6.0.428"
+  DotNetVersion5: "6.0.203" # This is the last version Mono supports. It is used for our Mono CI tests.
+  NuGetVersion: "6.5.0"
+  MonoVersion: "6.12.0"
+  Artifacts: ${{ github.workspace }}/artifacts/
+  Coverage: ${{ github.workspace }}/coverage/
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
+  CLR_OPENSSL_VERSION_OVERRIDE: 1.1
 
 on:
   push:
@@ -18,32 +30,53 @@ jobs:
       id-token: write
       contents: write
     steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: "0"
 
-    - uses: jdx/mise-action@c37c93293d6b742fc901e1406b8f764f6fb19dac # v2.4.4
-      with:
-        version: 2025.7.12
+      - name: Setup NuGet.exe
+        uses: nuget/setup-nuget@v1
+        with:
+          nuget-version: ${{ env.NuGetVersion }}
 
-    - name: Checkout
-      uses: actions/checkout@v2
-      with:
-        clean: "false"
-        fetch-depth: "0"
+      - name: 🔨 Use .NET Core SDKs
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: |
+            ${{ env.DotNetVersion5 }}
+            ${{ env.DotNetVersion4 }}
+            ${{ env.DotNetVersion3 }}
+            ${{ env.DotNetVersion2 }}
+            ${{ env.DotNetVersion }}
 
-    - name: 🎁 Get Repox Credentials from Vault
-      id: secrets
-      uses: SonarSource/vault-action-wrapper@v3
-      with:
-        secrets: |
-          development/kv/data/next url | SQS_NEXT_URL;
-          development/kv/data/next token | SQS_NEXT_TOKEN;
+      - name: 🎁 dotnet tool restore
+        run: |
+          dotnet tool restore
+          dotnet tool install --global dotnet-sonarscanner
 
-    - name: 🎁 Install SonarScanner
-      run: |
-        dotnet tool install --global dotnet-sonarscanner
+      - name: 🎁 nuget install
+        run: |
+          nuget install tools/packages.config -ExcludeVersion -OutputDirectory tools
 
-    - name: ⚙️ Build and analyze dotnet project on SQS Next
-      env:
-        SONAR_URL: ${{ fromJSON(steps.secrets.outputs.vault).SQS_NEXT_URL }}
-        SONAR_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).SQS_NEXT_TOKEN }}
-      run: |
-        bash .github/workflows/build_scan_dotnet.sh
+      - name: 🎁 Get Repox Credentials from Vault
+        id: secrets
+        uses: SonarSource/vault-action-wrapper@v3
+        with:
+          secrets: |
+            development/kv/data/next url | SQS_NEXT_URL;
+            development/kv/data/next token | SQS_NEXT_TOKEN;
+
+      - name: ⚙️ Build and analyze dotnet project on SQS Next
+        shell: bash
+        env:
+          SONAR_URL: ${{ fromJSON(steps.secrets.outputs.vault).SQS_NEXT_URL }}
+          SONAR_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).SQS_NEXT_TOKEN }}
+        run: .github/scripts/build_scan_dotnet.sh
+
+      - name: ⬆ Publish Logs
+        uses: actions/upload-artifact@v4
+        continue-on-error: true
+        if: ${{ always() }}
+        with:
+          name: "logs - ${{ github.workflow }}"
+          path: "${{ env.Artifacts }}/logs/"
