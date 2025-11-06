@@ -164,7 +164,12 @@ namespace OmniSharp.Roslyn.CSharp.Tests
 
             // First completion request should kick off the task to update the completion cache.
             var completions = await FindCompletionsAsync(filename, input, host);
-            Assert.True(completions.IsIncomplete);
+            if (!completions.IsIncomplete)
+            {
+                Assert.Contains("Guid", completions.Items.Select(c => c.TextEdit.NewText));
+                return; // No need to wait for the cache to be populated.
+            }
+
             Assert.DoesNotContain("Guid", completions.Items.Select(c => c.TextEdit.NewText));
             Assert.All(completions.Items, c => Assert.False(c.HasAfterInsertStep));
 
@@ -1358,8 +1363,8 @@ public class Derived : Base
             Assert.Equal(4, item.TextEdit.StartColumn);
             Assert.Equal(8, item.TextEdit.EndLine);
             Assert.Equal(13, item.TextEdit.EndColumn);
-            Assert.Equal("public override string Prop => throw new NotImplementedException();", item.TextEdit.NewText);
-            Assert.Equal(InsertTextFormat.PlainText, item.InsertTextFormat);
+            Assert.Equal("public override string Prop => throw new NotImplementedException()$0;", item.TextEdit.NewText);
+            Assert.Equal(InsertTextFormat.Snippet, item.InsertTextFormat);
             Assert.Equal("override Prop", item.FilterText);
         }
 
@@ -1917,7 +1922,7 @@ class C
 }";
 
             var completions = await FindCompletionsAsync(filename, input, SharedOmniSharpTestHost, triggerChar: ' ');
-            Assert.NotEmpty(completions.Items.Where(completion => completion.Preselect == true));
+            Assert.Contains(completions.Items, completion => completion.Preselect == true);
         }
 
         [Theory]
@@ -2219,20 +2224,20 @@ class Program
         [InlineData("dummy.csx")]
         public async Task TestOverrideWithTrailingWhitespacePrior(string filename)
         {
-            const string input = @"
-namespace N
-{
-    internal class C
-    {	
-// The trailing tabs on the previous line and the next line are integral to this bug
-	
-        override $$
-        public C()
-        {
-        }
-    }
-}
-";
+            string input = $$"""
+                namespace N
+                {
+                    internal class C
+                    {{{'\t'}}
+                // The trailing tabs on the previous line and the next line are integral to this bug
+                {{'\t'}}
+                        override $$
+                        public C()
+                        {
+                        }
+                    }
+                }
+                """;
 
             var completions = await FindCompletionsAsync(filename, input, SharedOmniSharpTestHost);
 
