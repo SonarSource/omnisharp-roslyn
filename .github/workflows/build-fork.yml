@@ -34,16 +34,17 @@ jobs:
       uses: SonarSource/vault-action-wrapper@v3
       with:
         secrets: |
+          development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader username | ARTIFACTORY_USER;
+          development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader access_token | ARTIFACTORY_ACCESS_TOKEN;
           development/kv/data/next url | SQS_NEXT_URL;
           development/kv/data/next token | SQS_NEXT_TOKEN;
 
-    - name: 🎁 Install SonarScanner
-      run: |
-        dotnet tool install --global dotnet-sonarscanner
-
     - name: ⚙️ Build and analyze dotnet project on SQS Next
       env:
+        ARTIFACTORY_USER: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
+        ARTIFACTORY_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
         SONAR_URL: ${{ fromJSON(steps.secrets.outputs.vault).SQS_NEXT_URL }}
         SONAR_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).SQS_NEXT_TOKEN }}
       run: |
+        dotnet tool install --global dotnet-sonarscanner
         bash .github/workflows/build_scan_dotnet.sh
