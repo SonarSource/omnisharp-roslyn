@@ -236,6 +236,11 @@ void BuildWithDotNetCli(BuildEnvironment env, string configuration)
         LockedMode = true
     };
 
+    if (!Platform.Current.IsWindows)
+    {
+        restoreSettings.LockFilePath = "linux-packages.lock.json";
+    }
+
     DotNetRestore("OmniSharp.sln", restoreSettings);
 
     Information("Building OmniSharp.sln with .NET Core CLI...");
