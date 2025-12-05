@@ -24,7 +24,7 @@ jobs:
         version: 2025.7.12
 
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v6
       with:
         clean: "false"
         fetch-depth: "0"
@@ -49,6 +49,12 @@ jobs:
         dotnet tool install --global dotnet-sonarscanner
         bash .github/workflows/build_scan_dotnet.sh
 
+    - name: Upload Windows Artifacts
+      uses: actions/upload-artifact@v5
+      with:
+        name: windows-omnisharp-roslyn
+        path: artifacts/package/**/omnisharp-*.*
+
   build_linux:
     runs-on: github-ubuntu-latest-s
     name: Build Linux
@@ -58,10 +64,7 @@ jobs:
           version: 2025.7.12
 
       - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          clean: "false"
-          fetch-depth: "0"
+        uses: actions/checkout@v6
 
       - name: Install Mono
         run: |
@@ -83,7 +86,7 @@ jobs:
             development/kv/data/next url | SQS_NEXT_URL;
             development/kv/data/next token | SQS_NEXT_TOKEN;
 
-      - name: ⚙️ Build and analyze dotnet project on SQS Next
+      - name: ⚙️ Build
         env:
           ARTIFACTORY_USER: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
           ARTIFACTORY_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
@@ -93,3 +96,9 @@ jobs:
           dotnet tool install --global dotnet-sonarscanner --version 8.0
           chmod +x ./build.sh
           ./build.sh --target Quick --configuration Release
+
+      - name: Upload Linux Artifacts
+        uses: actions/upload-artifact@v5
+        with:
+          name: linux-omnisharp-roslyn
+          path: artifacts/package/**/omnisharp-*.*
