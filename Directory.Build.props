@@ -6,6 +6,13 @@
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
 
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
+    <NuGetLockFilePath>windows-packages.lock.json</NuGetLockFilePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="!$([MSBuild]::IsOSPlatform('Windows'))">
+    <NuGetLockFilePath>linux-packages.lock.json</NuGetLockFilePath>
+  </PropertyGroup>
+
   <Import Project="build\Settings.props" />
 
 </Project>
