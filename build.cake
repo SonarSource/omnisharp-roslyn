@@ -227,6 +227,17 @@ Task("PrepareTestAssets:CakeTestAssets")
 
 void BuildWithDotNetCli(BuildEnvironment env, string configuration)
 {
+    Information("Restoring OmniSharp.sln with .NET Core CLI in locked mode...");
+
+    var restoreSettings = new DotNetRestoreSettings
+    {
+        WorkingDirectory = env.WorkingDirectory,
+        Verbosity = DotNetVerbosity.Minimal,
+        LockedMode = true
+    };
+
+    DotNetRestore("OmniSharp.sln", restoreSettings);
+
     Information("Building OmniSharp.sln with .NET Core CLI...");
 
     var logFileNameBase = CombinePaths(env.Folders.ArtifactsLogs, "OmniSharp-build");
@@ -239,8 +250,7 @@ void BuildWithDotNetCli(BuildEnvironment env, string configuration)
         WorkingDirectory = env.WorkingDirectory,
 
         ArgumentCustomization = args =>
-            args.Append("/restore")
-                .Append($"/bl:{logFileNameBase}.binlog;ProjectImports={projectImports}")
+            args.Append($"/bl:{logFileNameBase}.binlog;ProjectImports={projectImports}")
                 .Append($"/v:{Verbosity.Minimal.GetMSBuildVerbosityName()}")
                 .Append("/tl")
                 .Append("/graphBuild")
