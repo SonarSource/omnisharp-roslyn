@@ -236,7 +236,8 @@ void BuildWithDotNetCli(BuildEnvironment env, string configuration)
         {
             WorkingDirectory = env.WorkingDirectory,
             Verbosity = DotNetVerbosity.Minimal,
-            LockedMode = true
+            LockedMode = true,
+            LockFilePath = "windows-packages.lock.json"
         };
     }
     else
