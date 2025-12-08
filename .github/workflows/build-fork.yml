@@ -73,6 +73,13 @@ jobs:
         run: |
           bash .github/workflows/build_scan_dotnet.sh
 
+      - name: DEBUG
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-files-windows
+          path: .sonarqube/out/.sonar/dependency-files.tar.xz
+          if-no-files-found: error
+
   build_linux:
     runs-on: github-ubuntu-latest-s
     name: Build Linux (mono + net6)
