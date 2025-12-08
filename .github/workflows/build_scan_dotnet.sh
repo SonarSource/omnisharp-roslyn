@@ -33,7 +33,7 @@ SONAR_PARAMS=(
   -d:sonar.analysis.pipeline="$GITHUB_RUN_ID"
   -d:sonar.analysis.sha1="${GITHUB_SHA}"
   -d:sonar.scanner.scanAll=false
-  --debug
+  -d:sonar.log.level=DEBUG
 )
 
 if [ "$GITHUB_BRANCH" == "master" ] && [ "$PULL_REQUEST" == "false" ]; then
