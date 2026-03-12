@@ -1,94 +1,34 @@
-name: Build (Fork)
+name: PR Build (Linux + Windows)
 
+# Runs on PRs to test build + PGP signing on both platforms.
+# Uses GitHub-hosted runners (ubuntu-latest, windows-latest) so it runs
+# regardless of SonarSource runner availability.
 on:
-  push:
+  pull_request:
     branches:
       - master
       - branch-*
-      - dogfood-*
-  pull_request:
-  merge_group:
-  workflow_dispatch:
+    paths:
+      - '.github/workflows/build-fork.yml'
+      - '.github/workflows/sign-pgp.sh'
+      - '.github/workflows/pr-build.yml'
+      - 'build.sh'
+      - 'build.ps1'
+      - 'build.cake'
+      - '**/*.csproj'
 
 permissions:
   id-token: write
-  contents: write
+  contents: read
 
 env:
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
   DOTNET_CLI_TELEMETRY_OPTOUT: "true"
 
 jobs:
-  build_windows:
-    runs-on: github-windows-latest-s
-    name: Build Windows (net472 + net6)
-    steps:
-      - uses: jdx/mise-action@c37c93293d6b742fc901e1406b8f764f6fb19dac # v2.4.4
-        with:
-          version: 2025.7.12
-
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          clean: "false"
-          fetch-depth: "0"
-
-      - name: ð Get Repox Credentials from Vault
-        id: secrets
-        uses: SonarSource/vault-action-wrapper@v3
-        with:
-          secrets: |
-            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader username | ARTIFACTORY_USER;
-            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader access_token | ARTIFACTORY_ACCESS_TOKEN;
-            development/kv/data/next url | SQS_NEXT_URL;
-            development/kv/data/next token | SQS_NEXT_TOKEN;
-            development/kv/data/sign key | GPG_SIGNING_KEY;
-            development/kv/data/sign passphrase | GPG_SIGNING_PASSPHRASE;
-
-      - name: ð¨ Build and Package
-        env:
-          ARTIFACTORY_USER: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
-          ARTIFACTORY_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
-        run: |
-          powershell -File build.ps1 -target Quick -configuration Release
-
-      - name: Install GnuPG (Windows)
-        run: choco install gnupg --yes
-
-      - name: ð PGP Sign Windows Artifacts
-        env:
-          GPG_SIGNING_KEY: ${{ fromJSON(steps.secrets.outputs.vault).GPG_SIGNING_KEY }}
-          GPG_SIGNING_PASSPHRASE: ${{ fromJSON(steps.secrets.outputs.vault).GPG_SIGNING_PASSPHRASE }}
-        run: bash .github/workflows/sign-pgp.sh
-
-      - name: ð¬ Upload Windows Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: omnisharp-windows
-          path: |
-            artifacts/package/**/omnisharp-*.*
-            artifacts/package/**/omnisharp-*.*.asc
-          if-no-files-found: error
-
-      - name: ð Install SonarScanner
-        env:
-          ARTIFACTORY_USER: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
-          ARTIFACTORY_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
-        run: |
-          dotnet tool install --global dotnet-sonarscanner
-
-      - name: ð Analyze on SQS Next
-        env:
-          ARTIFACTORY_USER: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
-          ARTIFACTORY_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
-          SONAR_URL: ${{ fromJSON(steps.secrets.outputs.vault).SQS_NEXT_URL }}
-          SONAR_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).SQS_NEXT_TOKEN }}
-        run: |
-          bash .github/workflows/build_scan_dotnet.sh
-
   build_linux:
-    runs-on: github-ubuntu-latest-s
-    name: Build Linux (mono + net6)
+    runs-on: ubuntu-latest
+    name: Build Linux (mono + net6) + PGP sign
     steps:
       - uses: jdx/mise-action@c37c93293d6b742fc901e1406b8f764f6fb19dac # v2.4.4
         with:
@@ -110,7 +50,7 @@ jobs:
           sudo apt-get install -y mono-complete mono-roslyn msbuild
           sudo rm -rf /var/lib/apt/lists/*
 
-      - name: ð Get Repox Credentials from Vault
+      - name: 🎁 Get Repox Credentials from Vault
         id: secrets
         uses: SonarSource/vault-action-wrapper@v3
         with:
@@ -120,7 +60,7 @@ jobs:
             development/kv/data/sign key | GPG_SIGNING_KEY;
             development/kv/data/sign passphrase | GPG_SIGNING_PASSPHRASE;
 
-      - name: ð¨ Build and Package
+      - name: 🔨 Build and Package
         env:
           ARTIFACTORY_USER: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
           ARTIFACTORY_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
@@ -128,16 +68,79 @@ jobs:
           chmod +x ./build.sh
           ./build.sh --target Quick --configuration Release
 
-      - name: ð PGP Sign Linux Artifacts
+      - name: ✍️ PGP Sign Linux Artifacts
         env:
           GPG_SIGNING_KEY: ${{ fromJSON(steps.secrets.outputs.vault).GPG_SIGNING_KEY }}
           GPG_SIGNING_PASSPHRASE: ${{ fromJSON(steps.secrets.outputs.vault).GPG_SIGNING_PASSPHRASE }}
         run: chmod +x .github/workflows/sign-pgp.sh && .github/workflows/sign-pgp.sh
 
-      - name: ð¬ Upload Linux Artifacts
+      - name: Verify .asc files exist
+        run: |
+          for f in artifacts/package/**/omnisharp-*.zip artifacts/package/**/omnisharp-*.tar.gz; do
+            [ -f "$f" ] || continue
+            [ -f "${f}.asc" ] || { echo "Missing: ${f}.asc"; exit 1; }
+            echo "OK: ${f} + ${f}.asc"
+          done
+
+      - name: ⬆️ Upload Linux Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: omnisharp-linux
+          name: omnisharp-linux-pr
+          path: |
+            artifacts/package/**/omnisharp-*.*
+            artifacts/package/**/omnisharp-*.*.asc
+          if-no-files-found: error
+
+  build_windows:
+    runs-on: windows-latest
+    name: Build Windows (net472 + net6) + PGP sign
+    steps:
+      - uses: jdx/mise-action@c37c93293d6b742fc901e1406b8f764f6fb19dac # v2.4.4
+        with:
+          version: 2025.7.12
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          clean: "false"
+          fetch-depth: "0"
+
+      - name: 🎁 Get Repox Credentials from Vault
+        id: secrets
+        uses: SonarSource/vault-action-wrapper@v3
+        with:
+          secrets: |
+            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader username | ARTIFACTORY_USER;
+            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader access_token | ARTIFACTORY_ACCESS_TOKEN;
+            development/kv/data/sign key | GPG_SIGNING_KEY;
+            development/kv/data/sign passphrase | GPG_SIGNING_PASSPHRASE;
+
+      - name: 🔨 Build and Package
+        env:
+          ARTIFACTORY_USER: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
+          ARTIFACTORY_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
+        run: |
+          powershell -File build.ps1 -target Quick -configuration Release
+
+      - name: ✍️ PGP Sign Windows Artifacts
+        env:
+          GPG_SIGNING_KEY: ${{ fromJSON(steps.secrets.outputs.vault).GPG_SIGNING_KEY }}
+          GPG_SIGNING_PASSPHRASE: ${{ fromJSON(steps.secrets.outputs.vault).GPG_SIGNING_PASSPHRASE }}
+          PATH: ${{ env.PATH }};C:\Program Files\Git\usr\bin
+        run: bash .github/workflows/sign-pgp.sh
+
+      - name: Verify .asc files exist
+        shell: bash
+        run: |
+          find artifacts/package -type f \( -name "omnisharp-*.zip" -o -name "omnisharp-*.tar.gz" \) | while read f; do
+            [ -f "${f}.asc" ] || { echo "Missing: ${f}.asc"; exit 1; }
+            echo "OK: ${f} + ${f}.asc"
+          done
+
+      - name: ⬆️ Upload Windows Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: omnisharp-windows-pr
           path: |
             artifacts/package/**/omnisharp-*.*
             artifacts/package/**/omnisharp-*.*.asc
