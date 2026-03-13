@@ -1,8 +1,7 @@
 name: PR Build (Linux + Windows)
 
 # Runs on PRs to test build + PGP signing on both platforms.
-# Uses GitHub-hosted runners (ubuntu-latest, windows-latest) so it runs
-# regardless of SonarSource runner availability.
+# Same runners as build-fork. Linux: ubuntu-22.04 (Mono not supported on 24.04).
 on:
   pull_request:
     branches:
@@ -27,7 +26,7 @@ env:
 
 jobs:
   build_linux:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     name: Build Linux (mono + net6) + PGP sign
     steps:
       - uses: jdx/mise-action@c37c93293d6b742fc901e1406b8f764f6fb19dac # v2.4.4
@@ -50,7 +49,7 @@ jobs:
           sudo apt-get install -y mono-complete mono-roslyn msbuild
           sudo rm -rf /var/lib/apt/lists/*
 
-      - name: 🎁 Get Repox Credentials from Vault
+      - name: Get Repox Credentials from Vault
         id: secrets
         uses: SonarSource/vault-action-wrapper@v3
         with:
@@ -60,7 +59,7 @@ jobs:
             development/kv/data/sign key | GPG_SIGNING_KEY;
             development/kv/data/sign passphrase | GPG_SIGNING_PASSPHRASE;
 
-      - name: 🔨 Build and Package
+      - name: Build and Package
         env:
           ARTIFACTORY_USER: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
           ARTIFACTORY_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
@@ -68,7 +67,7 @@ jobs:
           chmod +x ./build.sh
           ./build.sh --target Quick --configuration Release
 
-      - name: ✍️ PGP Sign Linux Artifacts
+      - name: PGP Sign Linux Artifacts
         env:
           GPG_SIGNING_KEY: ${{ fromJSON(steps.secrets.outputs.vault).GPG_SIGNING_KEY }}
           GPG_SIGNING_PASSPHRASE: ${{ fromJSON(steps.secrets.outputs.vault).GPG_SIGNING_PASSPHRASE }}
@@ -82,7 +81,7 @@ jobs:
             echo "OK: ${f} + ${f}.asc"
           done
 
-      - name: ⬆️ Upload Linux Artifacts
+      - name: Upload Linux Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: omnisharp-linux-pr
@@ -92,7 +91,7 @@ jobs:
           if-no-files-found: error
 
   build_windows:
-    runs-on: windows-latest
+    runs-on: github-windows-latest-s
     name: Build Windows (net472 + net6) + PGP sign
     steps:
       - uses: jdx/mise-action@c37c93293d6b742fc901e1406b8f764f6fb19dac # v2.4.4
@@ -105,7 +104,7 @@ jobs:
           clean: "false"
           fetch-depth: "0"
 
-      - name: 🎁 Get Repox Credentials from Vault
+      - name: Get Repox Credentials from Vault
         id: secrets
         uses: SonarSource/vault-action-wrapper@v3
         with:
@@ -115,14 +114,14 @@ jobs:
             development/kv/data/sign key | GPG_SIGNING_KEY;
             development/kv/data/sign passphrase | GPG_SIGNING_PASSPHRASE;
 
-      - name: 🔨 Build and Package
+      - name: Build and Package
         env:
           ARTIFACTORY_USER: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
           ARTIFACTORY_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
         run: |
           powershell -File build.ps1 -target Quick -configuration Release
 
-      - name: ✍️ PGP Sign Windows Artifacts
+      - name: PGP Sign Windows Artifacts
         env:
           GPG_SIGNING_KEY: ${{ fromJSON(steps.secrets.outputs.vault).GPG_SIGNING_KEY }}
           GPG_SIGNING_PASSPHRASE: ${{ fromJSON(steps.secrets.outputs.vault).GPG_SIGNING_PASSPHRASE }}
@@ -137,7 +136,7 @@ jobs:
             echo "OK: ${f} + ${f}.asc"
           done
 
-      - name: ⬆️ Upload Windows Artifacts
+      - name: Upload Windows Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: omnisharp-windows-pr

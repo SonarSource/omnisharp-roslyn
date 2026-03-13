@@ -33,7 +33,7 @@ jobs:
           clean: "false"
           fetch-depth: "0"
 
-      - name: ð Get Repox Credentials from Vault
+      - name: Get Repox Credentials from Vault
         id: secrets
         uses: SonarSource/vault-action-wrapper@v3
         with:
@@ -45,23 +45,20 @@ jobs:
             development/kv/data/sign key | GPG_SIGNING_KEY;
             development/kv/data/sign passphrase | GPG_SIGNING_PASSPHRASE;
 
-      - name: ð¨ Build and Package
+      - name: Build and Package
         env:
           ARTIFACTORY_USER: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
           ARTIFACTORY_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
         run: |
           powershell -File build.ps1 -target Quick -configuration Release
 
-      - name: Install GnuPG (Windows)
-        run: choco install gnupg --yes
-
-      - name: ð PGP Sign Windows Artifacts
+      - name: PGP Sign Windows Artifacts
         env:
           GPG_SIGNING_KEY: ${{ fromJSON(steps.secrets.outputs.vault).GPG_SIGNING_KEY }}
           GPG_SIGNING_PASSPHRASE: ${{ fromJSON(steps.secrets.outputs.vault).GPG_SIGNING_PASSPHRASE }}
         run: bash .github/workflows/sign-pgp.sh
 
-      - name: ð¬ Upload Windows Artifacts
+      - name: Upload Windows Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: omnisharp-windows
@@ -70,14 +67,14 @@ jobs:
             artifacts/package/**/omnisharp-*.*.asc
           if-no-files-found: error
 
-      - name: ð Install SonarScanner
+      - name: Install SonarScanner
         env:
           ARTIFACTORY_USER: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
           ARTIFACTORY_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
         run: |
           dotnet tool install --global dotnet-sonarscanner
 
-      - name: ð Analyze on SQS Next
+      - name: Analyze on SQS Next
         env:
           ARTIFACTORY_USER: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
           ARTIFACTORY_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
@@ -87,7 +84,7 @@ jobs:
           bash .github/workflows/build_scan_dotnet.sh
 
   build_linux:
-    runs-on: github-ubuntu-latest-s
+    runs-on: ubuntu-22.04
     name: Build Linux (mono + net6)
     steps:
       - uses: jdx/mise-action@c37c93293d6b742fc901e1406b8f764f6fb19dac # v2.4.4
@@ -105,12 +102,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ca-certificates gnupg
           sudo gpg --homedir /tmp --no-default-keyring --keyring /usr/share/keyrings/mono-official-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
+          # Mono not supported on Ubuntu 24.04; use ubuntu-22.04 + stable-focal (actions/runner-images#13766)
           echo "deb [signed-by=/usr/share/keyrings/mono-official-archive-keyring.gpg] https://download.mono-project.com/repo/ubuntu stable-focal main" | sudo tee /etc/apt/sources.list.d/mono-official-stable.list
           sudo apt-get update
           sudo apt-get install -y mono-complete mono-roslyn msbuild
           sudo rm -rf /var/lib/apt/lists/*
 
-      - name: ð Get Repox Credentials from Vault
+      - name: Get Repox Credentials from Vault
         id: secrets
         uses: SonarSource/vault-action-wrapper@v3
         with:
@@ -120,7 +118,7 @@ jobs:
             development/kv/data/sign key | GPG_SIGNING_KEY;
             development/kv/data/sign passphrase | GPG_SIGNING_PASSPHRASE;
 
-      - name: ð¨ Build and Package
+      - name: Build and Package
         env:
           ARTIFACTORY_USER: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
           ARTIFACTORY_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
@@ -128,13 +126,13 @@ jobs:
           chmod +x ./build.sh
           ./build.sh --target Quick --configuration Release
 
-      - name: ð PGP Sign Linux Artifacts
+      - name: PGP Sign Linux Artifacts
         env:
           GPG_SIGNING_KEY: ${{ fromJSON(steps.secrets.outputs.vault).GPG_SIGNING_KEY }}
           GPG_SIGNING_PASSPHRASE: ${{ fromJSON(steps.secrets.outputs.vault).GPG_SIGNING_PASSPHRASE }}
         run: chmod +x .github/workflows/sign-pgp.sh && .github/workflows/sign-pgp.sh
 
-      - name: ð¬ Upload Linux Artifacts
+      - name: Upload Linux Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: omnisharp-linux
