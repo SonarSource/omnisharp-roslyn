@@ -24,10 +24,21 @@ namespace OmniSharp.MSBuild
 
         public static string GetBuildEnvironmentInfo()
         {
-            var instanceProp = s_BuildEnvironmentHelperType.GetProperty("Instance");
-            var buildEnvironment = instanceProp.GetMethod.Invoke(null, null);
+            try
+            {
+                var instanceProp = s_BuildEnvironmentHelperType.GetProperty("Instance");
+                var buildEnvironment = instanceProp.GetMethod.Invoke(null, null);
 
-            return DumpBuildEnvironment(buildEnvironment);
+                return DumpBuildEnvironment(buildEnvironment);
+            }
+            catch (Exception ex)
+            {
+                // Reflects into MSBuild's internal, undocumented Microsoft.Build.Shared types purely to log
+                // diagnostic info. Those types are not a supported contract and can disappear between MSBuild
+                // versions (e.g. removed in the .NET 10 SDK's Microsoft.Build.dll), so failure here must not be
+                // allowed to abort project system initialization.
+                return $"<unable to retrieve build environment info: {ex.Message}>";
+            }
         }
 
         private static string DumpBuildEnvironment(object buildEnvironment)
@@ -69,6 +80,11 @@ namespace OmniSharp.MSBuild
         public static bool CanInitializeVisualStudioBuildEnvironment()
         {
             if (!PlatformHelper.IsWindows)
+            {
+                return false;
+            }
+
+            if (s_BuildEnvironmentHelperType is null)
             {
                 return false;
             }
