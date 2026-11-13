@@ -126,3 +126,43 @@ jobs:
         run: |
           dotnet --version
           dotnet restore OmniSharp.sln -p:RestoreLockedMode=true
+
+  regen_linux:
+    runs-on: ubuntu-22.04
+    name: Regenerate Linux locks
+    timeout-minutes: 30
+    steps:
+      - uses: jdx/mise-action@c37c93293d6b742fc901e1406b8f764f6fb19dac # v2.4.4
+        with:
+          version: 2025.7.12
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          clean: "false"
+          fetch-depth: "0"
+
+      - name: Get Repox Credentials from Vault
+        id: secrets
+        uses: SonarSource/vault-action-wrapper@v3
+        with:
+          secrets: |
+            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader username | ARTIFACTORY_USER;
+            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader access_token | ARTIFACTORY_ACCESS_TOKEN;
+
+      - name: Regenerate packages.lock.linux.json
+        env:
+          ARTIFACTORY_USER: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
+          ARTIFACTORY_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
+        run: |
+          dotnet --version
+          dotnet restore OmniSharp.sln --force-evaluate -p:RestoreLockedMode=false
+          git status --short
+          git diff --stat -- "*packages.lock.linux.json"
+
+      - name: Upload regenerated Linux lock files
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-locks
+          path: '**/packages.lock.linux.json'
+          if-no-files-found: error
