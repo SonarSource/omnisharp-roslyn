@@ -95,3 +95,34 @@ jobs:
             artifacts/package/**/omnisharp-*.zip
             artifacts/publish/**/net472/**/OmniSharp.exe.config
           if-no-files-found: warn
+
+  verify_locked:
+    runs-on: github-windows-latest-s
+    name: Locked-mode restore from the committed Windows locks
+    timeout-minutes: 30
+    steps:
+      - uses: jdx/mise-action@c37c93293d6b742fc901e1406b8f764f6fb19dac # v2.4.4
+        with:
+          version: 2025.7.12
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          clean: "false"
+          fetch-depth: "0"
+
+      - name: Get Repox Credentials from Vault
+        id: secrets
+        uses: SonarSource/vault-action-wrapper@v3
+        with:
+          secrets: |
+            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader username | ARTIFACTORY_USER;
+            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader access_token | ARTIFACTORY_ACCESS_TOKEN;
+
+      - name: Locked-mode restore of the whole solution
+        env:
+          ARTIFACTORY_USER: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
+          ARTIFACTORY_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
+        run: |
+          dotnet --version
+          dotnet restore OmniSharp.sln -p:RestoreLockedMode=true
