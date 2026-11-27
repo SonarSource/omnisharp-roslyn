@@ -36,7 +36,7 @@ Defaults to `Default`.
 `-configuration (Release|Debug)`: The configuration to build.
 Defaults to `Debug`.
 
-`-test-configuration (Release|Debug)`: The configuration to use for the unit tests.
+`-test-configuration (Release|Debug)`: The configuration to use for the unit and integration tests.
 Defaults to `Debug`.
 
 `-install-path Path`: Path used for the **Install** target.
